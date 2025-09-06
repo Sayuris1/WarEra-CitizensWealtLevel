@@ -74,8 +74,8 @@ function fillSheetById(countryIds, sheet)
     sheet.getRange(i+3,3).setValue(dataUsers.rankings.userWealth.value);
     sheet.getRange(i+3,4).setValue(dataUsers.rankings.userWealth.rank);
 
-    playerLevelCount[dataUsers.leveling.level] += 1;
-    playerLevelTotalWealth[dataUsers.leveling.level] += dataUsers.rankings.userWealth.value;
+    playerLevelCount[dataUsers.leveling.level - 1] += 1;
+    playerLevelTotalWealth[dataUsers.leveling.level - 1] += dataUsers.rankings.userWealth.value;
 
     if(dataUsers.leveling.level < minLvl)
       minLvl = dataUsers.leveling.level;
@@ -148,4 +148,5 @@ function buildUrl(url, params) {
     return "%22" + key + "%22:" + addStr + params[key] + addStr;
   }).join(',');
   return url + (url.indexOf('?') >= 0 ? '!!!' : '?') + "input=%7B" + paramString + "%7D";
+
 }
