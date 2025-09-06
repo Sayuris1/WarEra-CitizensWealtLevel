@@ -1,0 +1,151 @@
+// Idea of the script by: dud https://app.warera.io/user/687fda07d95a8301887aabdd
+
+function triggerAction()
+{
+  const TR_ID = "6813b6d446e731854c7ac7eb";
+  const AZE_ID = "6813b6d546e731854c7ac8d1";
+
+  var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+  for (const sheet of sheets)
+  {
+    var sheetId = sheet.getIndex();
+    if(sheetId == 1)
+      fillSheetById([TR_ID], sheet);
+    else if(sheetId == 2)
+      fillSheetById([AZE_ID], sheet);
+    else
+      fillSheetById([TR_ID, AZE_ID], sheet);
+  }
+}
+
+function fillSheetById(countryIds, sheet)
+{
+   const options = {
+    countryId: "0",
+    limit : 100
+  };
+
+  var data = {elements:[], items:[]};
+  var i = 0
+  for(var id of countryIds)
+  {
+    options.countryId = id;
+
+    var response = UrlFetchApp.fetch(buildUrl("https://api2.warera.io/trpc/user.getUsersByCountry", options));
+    var newData = JSON.parse(response.getContentText());
+    newData = newData.result.data.items;
+    data.elements.push(newData);
+
+    for(var j = 0; j < data.elements[i].length; j++)
+    {
+      data.items.push(data.elements[i][j]);
+    }
+    i++;
+  }
+  
+  data = data.items;
+
+  const MAXLEVEL = 23;
+
+  var playerLevelCount = Array.apply(null, Array(MAXLEVEL)).map(function(_, i) {return 0});
+  var playerLevelTotalWealth = Array.apply(null, Array(MAXLEVEL)).map(function(_, i) {return 0});
+  
+  sheet.getRange(3,1,100,4).clearContent();
+
+  var minLvl = MAXLEVEL;
+  var maxLvl = 0;
+  for (i = 0; i < data.length; i++)
+  {
+    const options = {
+      userId: data[i]._id.toString(),
+    };
+    var response = UrlFetchApp.fetch(buildUrl("https://api2.warera.io/trpc/user.getUserLite", options));
+    var dataUsers = JSON.parse(response.getContentText());
+    dataUsers = dataUsers.result.data
+
+    try{dataUsers.rankings.userWealth;}
+    catch(e){continue;}
+    
+    sheet.getRange(i+3,1).setFormula('=HYPERLINK("https://app.warera.io/user/' + options.userId + '","' + dataUsers.username + '")');
+
+
+
+    sheet.getRange(i+3,2).setValue(dataUsers.leveling.level);
+    sheet.getRange(i+3,3).setValue(dataUsers.rankings.userWealth.value);
+    sheet.getRange(i+3,4).setValue(dataUsers.rankings.userWealth.rank);
+
+    playerLevelCount[dataUsers.leveling.level] += 1;
+    playerLevelTotalWealth[dataUsers.leveling.level] += dataUsers.rankings.userWealth.value;
+
+    if(dataUsers.leveling.level < minLvl)
+      minLvl = dataUsers.leveling.level;
+    else if(dataUsers.leveling.level > maxLvl)
+      maxLvl = dataUsers.leveling.level;
+  }
+
+  var averageLvl = 0
+  for (i = 0; i < MAXLEVEL; i++)
+  {
+    sheet.getRange(4+i,8).setValue(i + 1);
+    sheet.getRange(4+i,9).setValue(playerLevelCount[i]);
+    if(playerLevelCount[i] == 0)
+      sheet.getRange(4+i,10).setValue("-");
+    else
+      sheet.getRange(4+i,10).setValue(playerLevelTotalWealth[i] / playerLevelCount[i]);
+
+    averageLvl += playerLevelCount[i] * (i + 1);
+  }
+
+  var playerCount = data.length + 1
+  sheet.getRange(5,6).setValue("Players: " + playerCount);
+
+  averageLvl = averageLvl / playerCount
+  sheet.getRange(6,6).setValue("Average: " + Utilities.formatString('%.02f', averageLvl));
+
+  var i = 0;
+  var middleIndex = Math.ceil(playerCount * 0.5);
+  while (middleIndex >= 0)
+  {
+    middleIndex -= playerLevelCount[i];
+    i++
+  }
+  i++ // index starts from 0
+  sheet.getRange(7,6).setValue("Median: " + i);
+
+  sheet.getRange(8,6).setValue("Min: " + minLvl);
+  sheet.getRange(9,6).setValue("Max: " + maxLvl);
+
+  const JUMP = 3;
+  for (i = 0; i < MAXLEVEL; i = i + JUMP)
+  {
+    var startIndex = i+1;
+    var endIndex = i+JUMP;
+    var value = 0;
+    for(var j = i; j < JUMP + i; j++)
+    {
+      value += playerLevelCount[j];
+    }
+
+    sheet.getRange(12+(i/JUMP),6).setValue(startIndex + "-" + endIndex + ": " + value);
+  }
+
+  var currentDate = new Date();
+  currentDate = Utilities.formatDate(currentDate, "GMT+2", "HH:mm dd-MM-yy");
+  sheet.getRange(1,1).setValue("Data updated: " + currentDate);
+}
+
+
+/**
+ * Builds a complete URL from a base URL and a map of URL parameters.
+ * @param {string} url The base URL.
+ * @param {Object.<string, string>} params The URL parameters and values.
+ * @return {string} The complete URL.
+ * @private
+ */
+function buildUrl(url, params) {
+  var paramString = Object.keys(params).map(function(key) {
+    var addStr = (typeof params[key] == 'string' ? "%22" : "");
+    return "%22" + key + "%22:" + addStr + params[key] + addStr;
+  }).join(',');
+  return url + (url.indexOf('?') >= 0 ? '!!!' : '?') + "input=%7B" + paramString + "%7D";
+}
