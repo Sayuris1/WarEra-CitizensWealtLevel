@@ -1,3 +1,5 @@
+// Original Doc. that reverse engineered: https://docs.google.com/spreadsheets/d/16ewJkewq-kxabSjRETMXzSy7TAXhPMhj87gSKTgjYwo/edit?gid=95682265#gid=95682265
+
 // Idea of the script by: dud https://app.warera.io/user/687fda07d95a8301887aabdd
 
 function triggerAction()
@@ -73,7 +75,7 @@ function fillSheetById(countryIds, sheet)
   for (i = 0; i < data.length; i++)
   {
     // avoid 429 response (Too Many Requests) and reduces the load on the server.
-    Utilities.sleep(500); 
+    //Utilities.sleep(500); 
     const options = {
       userId: data[i]._id.toString(),
     };
@@ -86,11 +88,22 @@ function fillSheetById(countryIds, sheet)
     
     sheet.getRange(i+3,1).setFormula('=HYPERLINK("https://app.warera.io/user/' + options.userId + '","' + dataUsers.username + '")');
 
-
-
     sheet.getRange(i+3,2).setValue(dataUsers.leveling.level);
     sheet.getRange(i+3,3).setValue(dataUsers.rankings.userWealth.value);
     sheet.getRange(i+3,4).setValue(dataUsers.rankings.userWealth.rank);
+
+    if(dataUsers.mu)
+    {
+        const options = {
+        muId: dataUsers.mu,
+      };
+      var response = UrlFetchApp.fetch(buildUrl("https://api2.warera.io/trpc/mu.getById", options));
+      var dataMu = JSON.parse(response.getContentText());
+      dataMu = dataMu.result.data
+
+      sheet.getRange(i+3,5).setFormula('=HYPERLINK("https://app.warera.io/mu/' + dataUsers.mu + '","' + dataMu.name + '")');
+    }
+    
 
     playerLevelCount[dataUsers.leveling.level - 1] += 1;
     playerLevelTotalWealth[dataUsers.leveling.level - 1] += dataUsers.rankings.userWealth.value;
@@ -104,21 +117,21 @@ function fillSheetById(countryIds, sheet)
   var averageLvl = 0
   for (i = 0; i < MAXLEVEL; i++)
   {
-    sheet.getRange(4+i,8).setValue(i + 1);
-    sheet.getRange(4+i,9).setValue(playerLevelCount[i]);
+    sheet.getRange(4+i,9).setValue(i + 1);
+    sheet.getRange(4+i,10).setValue(playerLevelCount[i]);
     if(playerLevelCount[i] == 0)
-      sheet.getRange(4+i,10).setValue("-");
+      sheet.getRange(4+i,11).setValue("-");
     else
-      sheet.getRange(4+i,10).setValue(playerLevelTotalWealth[i] / playerLevelCount[i]);
+      sheet.getRange(4+i,11).setValue(playerLevelTotalWealth[i] / playerLevelCount[i]);
 
     averageLvl += playerLevelCount[i] * (i + 1);
   }
 
   var playerCount = data.length + 1
-  sheet.getRange(5,6).setValue("Players: " + playerCount);
+  sheet.getRange(5,7).setValue("Players: " + playerCount);
 
   averageLvl = averageLvl / playerCount
-  sheet.getRange(6,6).setValue("Average: " + Utilities.formatString('%.02f', averageLvl));
+  sheet.getRange(6,7).setValue("Average: " + Utilities.formatString('%.02f', averageLvl));
 
   var i = 0;
   var middleIndex = Math.ceil(playerCount * 0.5);
@@ -128,10 +141,10 @@ function fillSheetById(countryIds, sheet)
     i++
   }
   i++ // index starts from 0
-  sheet.getRange(7,6).setValue("Median: " + i);
+  sheet.getRange(7,7).setValue("Median: " + i);
 
-  sheet.getRange(8,6).setValue("Min: " + minLvl);
-  sheet.getRange(9,6).setValue("Max: " + maxLvl);
+  sheet.getRange(8,7).setValue("Min: " + minLvl);
+  sheet.getRange(9,7).setValue("Max: " + maxLvl);
 
   const JUMP = 3;
   for (i = 0; i < MAXLEVEL; i = i + JUMP)
@@ -144,7 +157,7 @@ function fillSheetById(countryIds, sheet)
       value += playerLevelCount[j];
     }
 
-    sheet.getRange(12+(i/JUMP),6).setValue(startIndex + "-" + endIndex + ": " + value);
+    sheet.getRange(12+(i/JUMP), 7).setValue(startIndex + "-" + endIndex + ": " + value);
   }
 
   var currentDate = new Date();
