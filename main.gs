@@ -127,8 +127,8 @@ function fillSheetById(countryIds, sheet)
     middleIndex -= playerLevelCount[i];
     i++
   }
-  i++ // index starts from 0
   sheet.getRange(7,6).setValue("Median: " + i);
+  i++ // index starts from 0
 
   sheet.getRange(8,6).setValue("Min: " + minLvl);
   sheet.getRange(9,6).setValue("Max: " + maxLvl);
