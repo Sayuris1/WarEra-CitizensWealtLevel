@@ -32,9 +32,25 @@ function fillSheetById(countryIds, sheet)
     options.countryId = id;
 
     var response = UrlFetchApp.fetch(buildUrl("https://api2.warera.io/trpc/user.getUsersByCountry", options));
-    var newData = JSON.parse(response.getContentText());
-    newData = newData.result.data.items;
+    var responseNewData = JSON.parse(response.getContentText());
+    newData = responseNewData.result.data.items;
     data.elements.push(newData);
+
+    while (responseNewData.result.data.nextCursor !== undefined) {
+      var input = {
+        0: {
+          countryId: id,
+          cursor: responseNewData.result.data.nextCursor,
+          direction: "forward"
+        }
+      };
+      var ext_url = `https://api2.warera.io/trpc/user.getUsersByCountry?batch=1&input=${encodeURIComponent(JSON.stringify(input))}`
+      var ext_response = UrlFetchApp.fetch(ext_url);
+      var ext_responseNewData = JSON.parse(ext_response.getContentText())[0];
+      data.elements[i] = data.elements[i].concat(ext_responseNewData.result.data.items);
+
+      responseNewData = ext_responseNewData;
+    }
 
     for(var j = 0; j < data.elements[i].length; j++)
     {
@@ -56,6 +72,8 @@ function fillSheetById(countryIds, sheet)
   var maxLvl = 0;
   for (i = 0; i < data.length; i++)
   {
+    // avoid 429 response (Too Many Requests) and reduces the load on the server.
+    Utilities.sleep(500); 
     const options = {
       userId: data[i]._id.toString(),
     };
