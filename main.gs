@@ -75,7 +75,7 @@ function fillSheetById(countryIds, sheet)
   for (i = 0; i < data.length; i++)
   {
     // avoid 429 response (Too Many Requests) and reduces the load on the server.
-    //Utilities.sleep(500); 
+    Utilities.sleep(500); 
     const options = {
       userId: data[i]._id.toString(),
     };
@@ -181,3 +181,4 @@ function buildUrl(url, params) {
   return url + (url.indexOf('?') >= 0 ? '!!!' : '?') + "input=%7B" + paramString + "%7D";
 
 }
+
