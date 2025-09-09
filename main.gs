@@ -68,7 +68,7 @@ function fillSheetById(countryIds, sheet)
   var playerLevelCount = Array.apply(null, Array(MAXLEVEL)).map(function(_, i) {return 0});
   var playerLevelTotalWealth = Array.apply(null, Array(MAXLEVEL)).map(function(_, i) {return 0});
   
-  sheet.getRange(3,1,100,4).clearContent();
+  sheet.getRange(3,2,100,4).clearContent();
 
   var minLvl = MAXLEVEL;
   var maxLvl = 0;
@@ -181,4 +181,5 @@ function buildUrl(url, params) {
   return url + (url.indexOf('?') >= 0 ? '!!!' : '?') + "input=%7B" + paramString + "%7D";
 
 }
+
 
