@@ -142,7 +142,7 @@ function fillSheetById(countryIds, sheet)
   }
 
   i++ // index starts from 0
-  sheet.getRange(7,7).setValue("Median: " + i);
+  sheet.getRange(7, 7).setValue(`="Median: " & MEDIAN(B3:B)`);
 
   sheet.getRange(8,7).setValue("Min: " + minLvl);
   sheet.getRange(9,7).setValue("Max: " + maxLvl);
@@ -182,5 +182,6 @@ function buildUrl(url, params) {
   return url + (url.indexOf('?') >= 0 ? '!!!' : '?') + "input=%7B" + paramString + "%7D";
 
 }
+
 
 
