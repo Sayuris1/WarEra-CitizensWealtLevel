@@ -4,4 +4,4 @@ TODO:
 - Pull skill data using API
 - List MU for every citizen
 - Find a way to list discord ID
-- ~~Auto deploy from Github~~
+- Auto deploy from Github
